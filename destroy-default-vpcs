@@ -56,10 +56,32 @@ main() {
 	    do
 		    ID="$(echo $vpc | jq -re '.VpcId')"
 		    DEFAULT="$(echo $vpc | jq -re '.IsDefault')"
-		    echo $DEFAULT
-		    echo $ID
 		    if [[ $DEFAULT == "true" ]]; then
-			    echo "TODO: Delete the VPC"
+			    for subnet in `aws ec2 describe-subnets --region $region | jq -re '.Subnets' | jq -rc '.[]'`
+			    do
+				    subnetid="$(echo $subnet | jq -re '.SubnetId')"
+				    svpc="$(echo $subnet | jq -re '.VpcId')"
+				    if [[ $svpc == $ID ]]; then
+					    aws ec2 delete-subnet --region $region --subnet-id=$subnetid --dry-run
+				    fi
+			    done
+			    for gateway in `aws ec2 describe-internet-gateways --region $region | jq -re '.InternetGateways' | jq -rc '.[]'`
+			    do
+				    gatewayid="$(echo $gateway | jq -re '.InternetGatewayId')"
+				    for attachment in `echo $gateway | jq -re '.Attachments' | jq -rc '.[]'`
+				    do
+					    gvpc="$(echo $attachment | jq -re '.VpcId')"
+					    if [[ $gvpc == $ID ]]; then
+						    aws ec2 delete-internet-gateway --region $region --internet-gateway-id=$gatewayid --dry-run
+						    break
+					    fi
+				    done
+
+				    if [[ $svpc == $ID ]]; then
+					    aws ec2 delete-subnet --region $region --subnet-id=$subnetid --dry-run
+				    fi
+			    done
+			    aws ec2 delete-vpc --region $region --vpc-id=$ID --dry-run
 		    fi
 	    done
     done
