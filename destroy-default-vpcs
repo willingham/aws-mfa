@@ -62,7 +62,7 @@ main() {
 				    subnetid="$(echo $subnet | jq -re '.SubnetId')"
 				    svpc="$(echo $subnet | jq -re '.VpcId')"
 				    if [[ $svpc == $ID ]]; then
-					    aws ec2 delete-subnet --region $region --subnet-id=$subnetid --dry-run
+					    aws ec2 delete-subnet --region $region --subnet-id=$subnetid 
 				    fi
 			    done
 			    for gateway in `aws ec2 describe-internet-gateways --region $region | jq -re '.InternetGateways' | jq -rc '.[]'`
@@ -72,16 +72,21 @@ main() {
 				    do
 					    gvpc="$(echo $attachment | jq -re '.VpcId')"
 					    if [[ $gvpc == $ID ]]; then
-						    aws ec2 delete-internet-gateway --region $region --internet-gateway-id=$gatewayid --dry-run
+						    aws ec2 detach-internet-gateway --region $region --internet-gateway-id=$gatewayid --vpc-id=$ID
+						    aws ec2 delete-internet-gateway --region $region --internet-gateway-id=$gatewayid 
 						    break
 					    fi
 				    done
-
-				    if [[ $svpc == $ID ]]; then
-					    aws ec2 delete-subnet --region $region --subnet-id=$subnetid --dry-run
+			    done
+			    aws ec2 delete-vpc --region $region --vpc-id=$ID 
+			    for secgrp in `aws ec2 describe-security-groups --region $region | jq -re '.SecurityGroups' | jq -rc '.[]'`
+			    do
+				    groupid="$(echo $subnet | jq -re '.GroupId')"
+				    gvpc="$(echo $subnet | jq -re '.VpcId')"
+				    if [[ $gvpc == $ID ]]; then
+					    aws ec2 delete-security-group --region $region --group-id=$groupid
 				    fi
 			    done
-			    aws ec2 delete-vpc --region $region --vpc-id=$ID --dry-run
 		    fi
 	    done
     done

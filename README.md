@@ -23,3 +23,8 @@ Running `aws-mfa` - when you run this, it will ask you first for your profile (I
 
 Enjoy!
 
+## destroy-default-vpcs
+
+This is designed to delete all default VPCs and associated gateways and subnets for an AWS account.  This script relies on the same variables as the aws-mfa script.
+
+WARNING: This script is desctructive and has not been widely tested.  Use it at your own risk!
